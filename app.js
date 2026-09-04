@@ -63,11 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
             type: t.type === "income" || t.type === "รายรับ" ? "income" : "expense",
             description: t.description || t.name || "",
             amount: Number(t.amount) || 0,
-            member: t.member || t.person || "เก้น",
+            member: t.member || t.person || currentMemberName || "สมาชิก",
             category: t.category || "",
             date: t.date || today(),
-            salaryRound: t.salaryRound || ""
-        };
+                    };
     }
 
     function localTransactions() {
@@ -79,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadFromSupabase() {
         const { data, error } = await sb
             .from("transactions")
-            .select("id,user_id,type,description,amount,member,category,date,salary_round,created_at,updated_at")
+            .select("id,user_id,type,description,amount,member,category,date,created_at,updated_at")
             .eq("household_id", currentHouseholdId)
             .order("date", { ascending: false })
             .order("created_at", { ascending: false });
@@ -89,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         transactions = (data || []).map(t => normalizeTransaction({
             ...t,
             userId: t.user_id || "",
-            salaryRound: t.salary_round || ""
+            
         }));
 
         localStorage.setItem(KEY, JSON.stringify(transactions));
@@ -110,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
             member: t.member,
             category: t.category || null,
             date: t.date,
-            salary_round: t.salaryRound || null
+            
         }));
 
         const { error } = await sb.from("transactions").insert(payload);
@@ -135,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
             member: transaction.member,
             category: transaction.category || null,
             date: transaction.date,
-            salary_round: transaction.salaryRound || null
+            
         };
 
         if (isEdit) {
@@ -143,19 +142,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 .from("transactions")
                 .update({ ...payload, updated_at: new Date().toISOString() })
                 .eq("id", transaction.id)
-                .select("id,user_id,type,description,amount,member,category,date,salary_round")
+                .select("id,user_id,type,description,amount,member,category,date")
                 .single();
             if (error) throw error;
-            return normalizeTransaction({ ...data, userId: data.user_id || "", salaryRound: data.salary_round || "" });
+            return normalizeTransaction({ ...data, userId: data.user_id || "" });
         }
 
         const { data, error } = await sb
             .from("transactions")
             .insert(payload)
-            .select("id,user_id,type,description,amount,member,category,date,salary_round")
+            .select("id,user_id,type,description,amount,member,category,date")
             .single();
         if (error) throw error;
-        return normalizeTransaction({ ...data, userId: data.user_id || "", salaryRound: data.salary_round || "" });
+        return normalizeTransaction({ ...data, userId: data.user_id || "" });
     }
 
     async function deleteTransactionFromSupabase(id) {
