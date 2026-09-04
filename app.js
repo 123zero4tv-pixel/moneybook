@@ -237,10 +237,18 @@ document.addEventListener("DOMContentLoaded", () => {
        Transaction Item
     ========================= */
 
+    function cleanTransactionText(value) {
+        return String(value || "")
+            .replace(/\s*[-–—·]?\s*รอบ(?:ที่)?\s*[12]\b/gi, "")
+            .replace(/\s*[-–—·]?\s*รอบ\s*[12]\b/gi, "")
+            .replace(/\s{2,}/g, " ")
+            .trim();
+    }
+
     function transactionMeta(t) {
-        const parts = [t.member, dateFmt(t.date)];
-        if (t.category) parts.push(t.category);
-        return parts.map(esc).join(" · ");
+        const parts = [cleanTransactionText(t.member), dateFmt(t.date)];
+        if (t.category) parts.push(cleanTransactionText(t.category));
+        return parts.filter(Boolean).map(esc).join(" · ");
     }
 
     function item(t, full = false, futureLabel = "") {
@@ -258,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div class="${full ? "transaction-page-info" : "transaction-info"}">
                     <div class="${full ? "transaction-page-name" : "transaction-name"}">
-                        ${esc(t.description)}
+                        ${esc(cleanTransactionText(t.description))}
                     </div>
                     <div class="${full ? "transaction-page-meta" : "transaction-meta"}">
                         ${transactionMeta(t)}${futureLabel ? ` <span class="future-badge">${esc(futureLabel)}</span>` : ""}
@@ -1203,6 +1211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderAll();
         report();
         renderReportPersons();
+        renderInviteMember();
 
         if ($("calendarPage")?.classList.contains("active")) {
             calendar();

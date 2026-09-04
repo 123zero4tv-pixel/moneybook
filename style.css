@@ -24,7 +24,6 @@ button,input,select{font:inherit}button{cursor:pointer}
 .save-btn{width:100%;border:0;background:var(--purple);color:#fff;padding:13px;border-radius:13px;font-weight:800}.save-btn:hover{background:#603ca4}
 .calendar-card,.selected-date-box,.report-section{padding:18px}.calendar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.icon-button{border:0;background:var(--soft);color:var(--purple);width:36px;height:36px;border-radius:10px;font-size:24px}.calendar-week,.calendar-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.calendar-week{text-align:center;color:var(--muted);font-size:11px;margin-bottom:6px}.calendar-days button{border:0;background:#fff;min-height:42px;border-radius:10px}.calendar-day.today{outline:2px solid var(--purple)}.calendar-day.has-income{background:var(--greenbg);color:var(--green);font-weight:700}.calendar-day.has-expense{background:var(--rosebg);color:var(--rose);font-weight:700}.calendar-day.other-month{color:#c5bdca}.selected-date-box{margin-top:18px}.selected-date-box h3{font-size:16px}
 .report-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.report-card strong{display:block;margin-top:7px;color:var(--dark);font-size:22px}.report-section{margin-top:18px}.category-line{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:center;font-size:12px;margin:10px 0}.category-bar{height:9px;background:var(--soft);border-radius:99px;overflow:hidden}.category-bar span{display:block;height:100%;background:var(--purple)}.report-persons{display:grid;grid-template-columns:1fr 1fr;gap:10px}.report-persons>div{padding:14px;background:var(--soft);border-radius:14px;display:flex;justify-content:space-between}
-.salary-round-summary{display:grid;gap:10px}.salary-summary-card{padding:14px;border:1px solid var(--border);border-radius:15px;background:var(--soft)}.salary-summary-head{display:flex;justify-content:space-between;align-items:center;font-weight:800}.salary-summary-person{color:var(--purple)}.salary-summary-meta{margin-top:7px;color:var(--muted);font-size:11px}.salary-summary-amount{color:var(--dark);font-size:17px}
 @media(max-width:700px){.app{padding:20px 15px 105px}.header{margin-bottom:25px}.member-badge{display:none}.greeting{font-size:23px}.balance-card{padding:22px;flex-direction:column;align-items:stretch}.balance{font-size:31px}.primary-btn{width:100%;justify-content:center}.summary,.members,.filter-row,.report-grid{grid-template-columns:1fr}.bottom-nav{bottom:12px;width:calc(100% - 20px)}.modal{padding:20px}.transaction,.transaction-page-item{gap:9px;padding:13px 14px}.transaction-amount,.transaction-page-amount{font-size:13px}.transaction-actions{gap:0}.edit-btn,.transaction-edit,.delete-btn,.transaction-delete{width:28px;height:28px}.category-line{grid-template-columns:95px 1fr auto}}
 
 .salary-report-header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}.salary-report-header h3{margin:4px 0 0;font-size:17px}.salary-month-picker{display:flex;align-items:center;gap:8px;background:var(--soft);padding:5px 7px;border-radius:14px}.salary-month-picker strong{font-size:11px;min-width:105px;text-align:center;color:var(--dark)}.salary-month-picker .icon-button{width:30px;height:30px;font-size:20px}.salary-month-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.salary-summary-card{border:1px solid var(--border);border-radius:18px;padding:15px;background:linear-gradient(180deg,#fff,#fbf9fe)}.salary-summary-top{display:flex;align-items:center;gap:10px;padding-bottom:10px}.salary-summary-top small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.salary-detail,.salary-total{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding:10px 0;font-size:12px}
@@ -179,13 +178,12 @@ button,input,select{font:inherit}button{cursor:pointer}
   .six-month-detail-summary{grid-template-columns:1fr}
 }
 
-@media(max-width:700px){
-
 /* =========================
    Supabase Login
    ========================= */
 .auth-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#f8f4ff,#fff);}
-.auth-screen.hidden{display:none;}
+.auth-screen.hidden{display:none!important;}
+.app.auth-hidden{display:none!important;}
 .auth-card{width:min(420px,100%);background:#fff;border:1px solid #eee7f7;border-radius:24px;padding:32px;box-shadow:0 18px 50px rgba(85,60,120,.12);text-align:center;}
 .auth-logo{width:64px;height:64px;margin:0 auto 14px;border-radius:18px;background:#eee6fb;color:#8d6cc5;display:grid;place-items:center;}
 .auth-logo svg{width:34px;height:34px;}
