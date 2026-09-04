@@ -615,7 +615,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!section || !input) return;
         const show = currentHousehold.mode === "shared" && !!currentHousehold.inviteCode;
         section.classList.toggle("hidden", !show);
-        if (show) input.value = currentHousehold.inviteCode;
+        if (show) {
+            input.value = currentHousehold.inviteCode;
+            input.type = "password";
+            const toggle = $("toggleInviteButton");
+            if (toggle) toggle.textContent = "แสดง";
+        }
     }
 
     function renderReportPersons() {
@@ -962,6 +967,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     $("viewAllButton")?.addEventListener("click", () => showPage("transactionsPage"));
+
+    $("toggleInviteButton")?.addEventListener("click", () => {
+        const input = $("inviteCodeDisplay");
+        const button = $("toggleInviteButton");
+        if (!input || !button) return;
+        const hidden = input.type === "password";
+        input.type = hidden ? "text" : "password";
+        button.textContent = hidden ? "ซ่อน" : "แสดง";
+    });
 
     $("copyInviteButton")?.addEventListener("click", async () => {
         const code = $("inviteCodeDisplay")?.value?.trim();
