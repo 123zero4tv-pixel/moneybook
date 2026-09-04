@@ -254,3 +254,15 @@ button,input,select{font:inherit}button{cursor:pointer}
 .onboarding-modal{width:min(100%,520px)}
 .onboarding-text{color:var(--muted);font-size:12px;line-height:1.6;margin-top:-10px}
 @media(max-width:700px){.mode-picker{grid-template-columns:1fr}.shared-wallet-card{align-items:flex-start}.wallet-badge{display:none}}
+
+/* V12 auth polish */
+.auth-card-wide{width:min(520px,100%)}
+.auth-section-heading{font-size:15px;font-weight:900;color:var(--dark);margin:4px 0 12px}
+.auth-signup-fields{padding-bottom:4px;margin-bottom:8px}
+.auth-signup-fields.hidden{display:none!important}
+.auth-tabs{margin:18px 0 20px}
+.auth-tab{cursor:pointer}
+.auth-submit{min-height:46px;background:var(--purple);color:#fff;box-shadow:0 10px 24px rgba(112,72,184,.18)}
+.auth-submit:hover{filter:brightness(.98);transform:translateY(-1px)}
+.auth-note{font-size:11px;line-height:1.5}
+@media(max-width:600px){.auth-card-wide{width:min(100%,420px)}.mode-picker{grid-template-columns:1fr}.auth-card{padding:26px 20px}}

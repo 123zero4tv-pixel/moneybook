@@ -1123,8 +1123,9 @@ document.addEventListener("DOMContentLoaded", () => {
         $("loginTab")?.classList.toggle("active", mode === "login");
         $("signupTab")?.classList.toggle("active", mode === "signup");
         $("signupFields")?.classList.toggle("hidden", mode !== "signup");
-        $("authSubmit").textContent = mode === "signup" ? "สมัครใช้งาน" : "เข้าสู่ระบบ";
-        $("authNote").textContent = mode === "signup" ? "หลังสมัครแล้ว ระบบจะให้ตั้งค่าบัญชี" : "ใช้บัญชี Supabase เดิมได้เลย";
+        $("loginHeading")?.classList.toggle("hidden", mode === "signup");
+        $("authSubmit").textContent = mode === "signup" ? "สร้างบัญชีและเริ่มใช้งาน" : "เข้าสู่ระบบ";
+        $("authNote").textContent = mode === "signup" ? "หลังสมัคร ระบบจะสร้างกระเป๋าเงินตามรูปแบบที่คุณเลือก" : "ใช้บัญชี Supabase เดิมได้เลย";
         showAuthError("");
     }
 
@@ -1267,7 +1268,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if(error) throw error; session=data.session; await setupAuthenticatedUser();
             }
         }catch(err){console.error(err);showAuthError(err.message||"ไม่สามารถดำเนินการได้");}
-        finally{button.disabled=false;button.textContent=authMode==="signup"?"สมัครใช้งาน":"เข้าสู่ระบบ";}
+        finally{button.disabled=false;button.textContent=authMode==="signup"?"สร้างบัญชีและเริ่มใช้งาน":"เข้าสู่ระบบ";}
     });
 
     $("logoutButton")?.addEventListener("click",async()=>{if(confirm("ต้องการออกจากระบบหรือไม่?")) await sb.auth.signOut();});

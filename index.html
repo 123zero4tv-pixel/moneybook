@@ -18,14 +18,19 @@
         </div>
         <h2>บันทึกบัญชี</h2>
         <p>บัญชีรายรับ–รายจ่ายออนไลน์</p>
-        <div class="auth-tabs">
+
+        <div class="auth-tabs" role="tablist" aria-label="บัญชีผู้ใช้">
             <button type="button" class="auth-tab active" id="loginTab">เข้าสู่ระบบ</button>
             <button type="button" class="auth-tab" id="signupTab">สมัครใช้งาน</button>
         </div>
-        <form id="authForm">
-            <div id="signupFields" class="signup-fields hidden">
+
+        <form id="authForm" novalidate>
+            <div id="signupFields" class="auth-signup-fields hidden">
+                <div class="auth-section-heading">สร้างบัญชีใหม่</div>
+
                 <label for="signupName">ชื่อที่ใช้ในบัญชี</label>
-                <input id="signupName" type="text" maxlength="40" placeholder="เช่น นัท">
+                <input id="signupName" type="text" maxlength="40" autocomplete="name" placeholder="เช่น นัท">
+
                 <label>รูปโปรไฟล์</label>
                 <div class="avatar-picker" id="signupAvatarPicker">
                     <button type="button" class="avatar-choice selected" data-avatar="🙂">🙂</button>
@@ -35,23 +40,29 @@
                     <button type="button" class="avatar-choice" data-avatar="👩🏻">👩🏻</button>
                     <button type="button" class="avatar-choice" data-avatar="👨🏻">👨🏻</button>
                 </div>
+
                 <label>รูปแบบบัญชี</label>
                 <div class="mode-picker">
-                    <button type="button" class="mode-choice selected" data-mode="personal">👤<span>ใช้คนเดียว</span><small>มีแค่คุณ</small></button>
-                    <button type="button" class="mode-choice" data-mode="shared">👥<span>สร้างบัญชีร่วม</span><small>ชวนคนอื่นเข้ามา</small></button>
-                    <button type="button" class="mode-choice" data-mode="join">🔗<span>เข้าบัญชีร่วม</span><small>มีรหัสเชิญอยู่แล้ว</small></button>
+                    <button type="button" class="mode-choice selected" data-mode="personal">👤<span>ใช้คนเดียว</span><small>กระเป๋าเงินของคุณ</small></button>
+                    <button type="button" class="mode-choice" data-mode="shared">👥<span>สร้างบัญชีร่วม</span><small>สร้างรหัสเชิญ</small></button>
+                    <button type="button" class="mode-choice" data-mode="join">🔗<span>เข้าบัญชีร่วม</span><small>มีรหัสเชิญแล้ว</small></button>
                 </div>
+
                 <div id="inviteField" class="invite-field hidden">
                     <label for="signupInvite">รหัสเชิญ</label>
-                    <input id="signupInvite" type="text" maxlength="20" placeholder="เช่น ABCD-1234">
+                    <input id="signupInvite" type="text" maxlength="20" autocomplete="off" placeholder="เช่น ABCD-1234">
                 </div>
             </div>
+
+            <div class="auth-section-heading" id="loginHeading">เข้าสู่บัญชีของคุณ</div>
             <label for="authEmail">อีเมล</label>
             <input id="authEmail" type="email" autocomplete="email" required placeholder="อีเมลของคุณ">
+
             <label for="authPassword">รหัสผ่าน</label>
-            <input id="authPassword" type="password" autocomplete="current-password" required placeholder="รหัสผ่าน">
+            <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร">
+
             <button class="primary-btn auth-submit" type="submit" id="authSubmit">เข้าสู่ระบบ</button>
-            <div id="authError" class="auth-error"></div>
+            <div id="authError" class="auth-error" role="alert"></div>
             <div id="authNote" class="auth-note">ใช้บัญชี Supabase เดิมได้เลย</div>
         </form>
     </div>
