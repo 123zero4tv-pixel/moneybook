@@ -1120,12 +1120,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setAuthMode(mode) {
         authMode = mode;
-        $("loginTab")?.classList.toggle("active", mode === "login");
-        $("signupTab")?.classList.toggle("active", mode === "signup");
-        $("signupFields")?.classList.toggle("hidden", mode !== "signup");
-        $("loginHeading")?.classList.toggle("hidden", mode === "signup");
-        $("authSubmit").textContent = mode === "signup" ? "สร้างบัญชีและเริ่มใช้งาน" : "เข้าสู่ระบบ";
-        $("authNote").textContent = mode === "signup" ? "หลังสมัคร ระบบจะสร้างกระเป๋าเงินตามรูปแบบที่คุณเลือก" : "ใช้บัญชี Supabase เดิมได้เลย";
+        const isSignup = mode === "signup";
+        $("loginTab")?.classList.toggle("active", !isSignup);
+        $("signupTab")?.classList.toggle("active", isSignup);
+        $("loginTab")?.setAttribute("aria-selected", String(!isSignup));
+        $("signupTab")?.setAttribute("aria-selected", String(isSignup));
+
+        // Use both class and inline display so the form stays correct even
+        // when GitHub Pages/CDN is temporarily serving an older CSS file.
+        const signupFields = $("signupFields");
+        if (signupFields) {
+            signupFields.classList.toggle("hidden", !isSignup);
+            signupFields.style.display = isSignup ? "block" : "none";
+        }
+        $("loginHeading")?.classList.toggle("hidden", isSignup);
+        $("loginHeading") && ($("loginHeading").style.display = isSignup ? "none" : "block");
+        $("authSubmit").textContent = isSignup ? "สร้างบัญชีและเริ่มใช้งาน" : "เข้าสู่ระบบ";
+        $("authNote").textContent = isSignup ? "หลังสมัคร ระบบจะสร้างกระเป๋าเงินตามรูปแบบที่คุณเลือก" : "ใช้บัญชี Supabase เดิมได้เลย";
         showAuthError("");
     }
 
@@ -1237,6 +1248,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     $("loginTab")?.addEventListener("click",()=>setAuthMode("login"));
     $("signupTab")?.addEventListener("click",()=>setAuthMode("signup"));
+    // Always start on the login form; never leave signup fields visible by default.
+    setAuthMode("login");
 
     document.querySelectorAll("#signupAvatarPicker .avatar-choice").forEach(btn=>btn.onclick=()=>{
         signupAvatar=btn.dataset.avatar;
