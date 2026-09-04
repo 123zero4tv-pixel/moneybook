@@ -25,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let transactions = [];
     let editingId = null;
     let cal = new Date();
-    let salaryMonth = new Date();
 
     /* =========================
        Utility
@@ -179,51 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================
-       Salary Round
-    ========================= */
-
-    function salaryRoundOptions(member, selected = "") {
-        if (member === "เก้น") {
-            return [
-                ["round1", "รอบที่ 1"],
-                ["round2", "รอบที่ 2"]
-            ].map(([value,label]) =>
-                `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`
-            ).join("");
-        }
-
-        return `<option value="monthly" ${selected === "monthly" ? "selected" : ""}>เงินเดือนประจำเดือน</option>`;
-    }
-
-    function updateSalaryRoundUI(selected = "") {
-        const group = $("salaryRoundGroup");
-        const select = $("salaryRound");
-        const hint = $("salaryRoundHint");
-
-        if (!group || !select) return;
-
-        const isSalary =
-            $("transactionType")?.value === "income" &&
-            $("category")?.value === "เงินเดือน";
-
-        if (!isSalary) {
-            group.classList.remove("show");
-            select.innerHTML = "";
-            return;
-        }
-
-        group.classList.add("show");
-
-        const member = currentMemberName || "เก้น";
-        select.innerHTML = salaryRoundOptions(member, selected);
-
-        hint.textContent =
-            member === "เก้น"
-                ? "เก้นรับเงินเดือนเดือนละ 2 รอบ"
-                : "มิ้นรับเงินเดือนเดือนละ 1 รอบ";
-    }
-
-    /* =========================
        Category
     ========================= */
 
@@ -240,7 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 `<option value="${esc(item)}" ${item === selected ? "selected" : ""}>${esc(item)}</option>`
             ).join("");
 
-        updateSalaryRoundUI();
     }
 
     function categoryFilter() {
@@ -288,13 +241,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function transactionMeta(t) {
         const parts = [t.member, dateFmt(t.date)];
         if (t.category) parts.push(t.category);
-        if (t.salaryRound && t.type === "income" && t.category === "เงินเดือน") {
-            parts.push(
-                t.salaryRound === "round1" ? "รอบที่ 1" :
-                t.salaryRound === "round2" ? "รอบที่ 2" :
-                "เงินเดือนประจำเดือน"
-            );
-        }
         return parts.map(esc).join(" · ");
     }
 
@@ -427,7 +373,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (submit) submit.textContent = "บันทึกรายการ";
 
         $("modalTitle").textContent = "เพิ่มรายการ";
-        updateSalaryRoundUI();
     }
 
     function openEdit(id) {
@@ -451,9 +396,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         categoryOptions(t.category);
-        updateSalaryRoundUI(t.salaryRound);
-
-        if ($("salaryRound")) $("salaryRound").value = t.salaryRound || "";
 
         const submit = $("transactionForm")?.querySelector('button[type="submit"]');
         if (submit) submit.textContent = "บันทึกการแก้ไข";
@@ -506,12 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             categoryOptions();
-            updateSalaryRoundUI();
         });
-    });
-
-    $("category")?.addEventListener("change", () => {
-        updateSalaryRoundUI($("salaryRound")?.value || "");
     });
 
     $("transactionForm")?.addEventListener("submit", async e => {
@@ -535,18 +472,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        let salaryRound = "";
-
-        if (type === "income" && category === "เงินเดือน") {
-            salaryRound = $("salaryRound")?.value || "";
-
-            if (!salaryRound) {
-                alert("กรุณาเลือกรอบเงินเดือน");
-                $("salaryRound")?.focus();
-                return;
-            }
-        }
-
         const updated = {
             type,
             description,
@@ -556,8 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? (transactions.find(t => t.id === editingId)?.member || currentMemberName)
                 : currentMemberName,
             category,
-            date,
-            salaryRound
+            date
         };
 
         const submit = $("transactionForm").querySelector('button[type="submit"]');
@@ -628,7 +552,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const member = $("filterMember")?.value || "all";
         const category = $("filterCategory")?.value || "all";
         const list = transactions.filter(t => {
-            const text = [t.description, t.category, t.member, t.salaryRound].join(" ").toLowerCase();
+            const text = [t.description, t.category, t.member].join(" ").toLowerCase();
             return (!search || text.includes(search)) && (type === "all" || t.type === type) && (member === "all" || t.member === member) && (category === "all" || t.category === category);
         });
         const occurred = list.filter(t => t.date <= today());
@@ -665,17 +589,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if ($("walletTotal")) $("walletTotal").textContent = money(t.balance);
         if ($("memberCount")) $("memberCount").textContent = `${Math.max(householdMembers.length,1)} คน`;
         if ($("walletMembers")) $("walletMembers").textContent = `${Math.max(householdMembers.length,1)} คนในบัญชี`;
-        if ($("homeGreeting")) $("homeGreeting").textContent = `สวัสดี ${currentProfile.name || currentMemberName || ""}`.trim();
+        if ($("homeGreeting")) $("homeGreeting").textContent = "ยินดีต้อนรับ";
         if ($("balanceSub")) $("balanceSub").textContent = currentHousehold.mode === "shared" ? "กระเป๋าเงินร่วมของสมาชิก" : "กระเป๋าเงินส่วนตัว";
         if ($("walletTitle")) $("walletTitle").textContent = currentHousehold.mode === "shared" ? "กระเป๋าเงินกลาง" : "กระเป๋าเงินของฉัน";
-        if ($("headerSubtitle")) $("headerSubtitle").textContent = currentHousehold.name || (currentHousehold.mode === "shared" ? "บัญชีร่วม" : "บัญชีส่วนตัว");
-        if ($("currentMemberBadge")) $("currentMemberBadge").innerHTML = `<span class="profile-avatar-small">${esc(currentProfile.avatar || "🙂")}</span>${esc(currentProfile.name || currentMemberName || "ออนไลน์")}`;
+        if ($("headerSubtitle")) $("headerSubtitle").textContent = currentHousehold.mode === "shared" ? "บัญชีร่วม" : "บัญชีส่วนตัว";
+        if ($("currentMemberBadge")) $("currentMemberBadge").innerHTML = `<span class="profile-avatar-small">${esc(currentProfile.avatar || "🙂")}</span>บัญชีของฉัน`;
 
         if ($("homeMonth")) {
             $("homeMonth").textContent = new Date().toLocaleDateString("th-TH", {
                 month:"long", year:"numeric"
             });
         }
+    }
+
+    function renderInviteMember() {
+        const section = $("inviteMemberSection");
+        const input = $("inviteCodeDisplay");
+        if (!section || !input) return;
+        const show = currentHousehold.mode === "shared" && !!currentHousehold.inviteCode;
+        section.classList.toggle("hidden", !show);
+        if (show) input.value = currentHousehold.inviteCode;
     }
 
     function renderReportPersons() {
@@ -738,7 +671,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderSixMonthChart();
         renderMonthlyExpense();
-        renderSalaryReport();
     }
 
     function monthKey(date) {
@@ -929,32 +861,6 @@ document.addEventListener("DOMContentLoaded", () => {
             : `<div class="monthly-empty">เดือนนี้ยังไม่มีรายจ่าย</div>`;
     }
 
-    function renderSalaryReport() {
-        const key = monthKey(salaryMonth);
-        const salary = transactions.filter(t => t.date.startsWith(key) && t.type === "income" && t.category === "เงินเดือน");
-        const grouped = householdMembers.map(m => {
-            const rows = salary.filter(t => t.userId === m.user_id || t.member === m.member_name);
-            return { member:m.member_name, avatar:m.avatar||"🙂", rows, total:rows.reduce((s,t)=>s+t.amount,0) };
-        });
-        const grandTotal = grouped.reduce((s,x)=>s+x.total,0);
-        const label = salaryMonth.toLocaleDateString("th-TH",{month:"long",year:"numeric"});
-        if ($("salaryMonthInput")) $("salaryMonthInput").value = `${salaryMonth.getFullYear()}-${String(salaryMonth.getMonth()+1).padStart(2,"0")}`;
-        if (!$("salaryRoundSummary")) return;
-        $("salaryRoundSummary").innerHTML = grouped.length
-            ? grouped.map(x => {
-                let details = "";
-                if (x.member === "เก้น") {
-                    const r1=x.rows.filter(t=>t.salaryRound==="round1").reduce((s,t)=>s+t.amount,0);
-                    const r2=x.rows.filter(t=>t.salaryRound==="round2").reduce((s,t)=>s+t.amount,0);
-                    details=`<div class="salary-detail"><span>รอบที่ 1</span><strong>${money(r1)}</strong></div><div class="salary-detail"><span>รอบที่ 2</span><strong>${money(r2)}</strong></div>`;
-                } else {
-                    details=`<div class="salary-detail"><span>เงินเดือน</span><strong>${money(x.total)}</strong></div>`;
-                }
-                return `<div class="salary-summary-card"><div class="salary-summary-head"><span class="salary-summary-person">${esc(x.avatar)} ${esc(x.member)}</span><strong>${money(x.total)}</strong></div>${details}</div>`;
-            }).join("") + `<div class="salary-grand-total"><span>เงินเดือนรวม ${esc(label)}</span><strong>${money(grandTotal)}</strong></div><div class="salary-report-note">${salary.length ? `พบรายการเงินเดือน ${salary.length} รายการในเดือนนี้` : "เดือนนี้ยังไม่มีรายการเงินเดือน"}</div>`
-            : `<div class="empty">ยังไม่มีสมาชิกในบัญชี</div>`;
-    }
-
     /* =========================
        Calendar
     ========================= */
@@ -1050,6 +956,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     $("viewAllButton")?.addEventListener("click", () => showPage("transactionsPage"));
 
+    $("copyInviteButton")?.addEventListener("click", async () => {
+        const code = $("inviteCodeDisplay")?.value?.trim();
+        if (!code) return;
+        try {
+            await navigator.clipboard.writeText(code);
+        } catch {
+            $("inviteCodeDisplay")?.select();
+            document.execCommand("copy");
+        }
+        const button = $("copyInviteButton");
+        if (button) {
+            const old = button.textContent;
+            button.textContent = "คัดลอกแล้ว";
+            setTimeout(() => button.textContent = old, 1400);
+        }
+    });
+
     [$("searchInput"), $("filterType"), $("filterMember"), $("filterCategory")]
         .forEach(element => {
             if (!element) return;
@@ -1080,23 +1003,6 @@ document.addEventListener("DOMContentLoaded", () => {
     $("expenseMonthLabel")?.addEventListener("click", () => {
         expenseMonth = new Date();
         renderMonthlyExpense();
-    });
-
-    $("salaryPrev")?.addEventListener("click", () => {
-        salaryMonth.setMonth(salaryMonth.getMonth() - 1);
-        renderSalaryReport();
-    });
-
-    $("salaryNext")?.addEventListener("click", () => {
-        salaryMonth.setMonth(salaryMonth.getMonth() + 1);
-        renderSalaryReport();
-    });
-
-    $("salaryMonthInput")?.addEventListener("change", e => {
-        if (!e.target.value) return;
-        const [year, month] = e.target.value.split("-").map(Number);
-        salaryMonth = new Date(year, month - 1, 1);
-        renderSalaryReport();
     });
 
     /* =========================

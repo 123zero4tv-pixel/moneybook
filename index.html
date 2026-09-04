@@ -82,11 +82,11 @@
         </div>
         <div>
             <h1>บันทึกบัญชี</h1>
-            <p id="headerSubtitle">บัญชีร่วม</p>
+            <p id="headerSubtitle">บัญชีรายรับ-รายจ่าย</p>
         </div>
     </div>
     <div class="header-actions">
-        <div class="member-badge profile-badge" id="currentMemberBadge">ออนไลน์</div>
+        <div class="member-badge profile-badge" id="currentMemberBadge">บัญชีของฉัน</div>
         <button class="logout-btn" id="logoutButton" type="button">ออกจากระบบ</button>
     </div>
 </header>
@@ -95,7 +95,7 @@
     <div class="top-row">
         <div>
             <div class="section-label">ภาพรวมการเงิน</div>
-            <h2 class="greeting" id="homeGreeting">สวัสดี</h2>
+            <h2 class="greeting" id="homeGreeting">ยินดีต้อนรับ</h2>
         </div>
         <div class="member-badge date-button" id="homeMonth">เดือนนี้</div>
     </div>
@@ -155,6 +155,24 @@
                 <small id="walletMembers">1 คนในบัญชี</small>
             </div>
             <div class="wallet-badge">รวมทั้งหมด</div>
+        </div>
+    </section>
+
+    <section class="section invite-section hidden" id="inviteMemberSection">
+        <div class="section-title">สมาชิก</div>
+        <h2 class="section-heading">เชิญสมาชิกเข้าบัญชี</h2>
+        <div class="invite-card">
+            <div class="invite-copy">
+                <div class="invite-icon">🔗</div>
+                <div>
+                    <strong>รหัสเชิญสมาชิก</strong>
+                    <small>ส่งรหัสนี้ให้สมาชิกเพื่อเข้าบัญชีร่วม</small>
+                </div>
+            </div>
+            <div class="invite-code-row">
+                <input id="inviteCodeDisplay" type="text" readonly placeholder="รหัสเชิญ">
+                <button id="copyInviteButton" type="button" class="secondary-btn">คัดลอก</button>
+            </div>
         </div>
     </section>
 
@@ -364,20 +382,6 @@
         <div class="expense-category-list" id="monthlyExpenseByCategory"></div>
     </section>
 
-    <section class="report-section salary-report">
-        <div class="salary-report-header">
-            <div>
-                <div class="section-title">เงินเดือนรายเดือน</div>
-                <h3>สรุปเงินเดือนของเรา</h3>
-            </div>
-            <div class="salary-month-picker">
-                <button class="icon-button" id="salaryPrev" type="button" aria-label="เดือนก่อนหน้า">‹</button>
-                <input class="salary-month-input" id="salaryMonthInput" type="month" aria-label="เลือกเดือนเงินเดือน">
-                <button class="icon-button" id="salaryNext" type="button" aria-label="เดือนถัดไป">›</button>
-            </div>
-        </div>
-        <div id="salaryRoundSummary"></div>
-    </section>
 </main>
 
 </div>
@@ -484,11 +488,6 @@
             <select id="category"></select>
         </div>
 
-        <div class="form-group salary-round-group" id="salaryRoundGroup">
-            <label for="salaryRound">รอบเงินเดือน <span>(สำหรับเงินเดือน)</span></label>
-            <select id="salaryRound"></select>
-            <small id="salaryRoundHint"></small>
-        </div>
 
         <div class="form-group">
             <label for="date">วันที่</label>
