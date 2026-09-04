@@ -3,12 +3,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const OLD_KEY = "transactions";
     const SUPABASE_URL = "https://hqvwggayhilyraghfyxq.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZlVaEVAn0U7rLPnsxztqzQ_NfO5OeHM";
-    const HOUSEHOLD_ID = "63cdcbd4-46ad-4524-aa0c-997f0c1f148b";
+    let currentHouseholdId = localStorage.getItem("baantheung_household_id") || "";
     const $ = id => document.getElementById(id);
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     let session = null;
     let currentMemberName = "";
+    let currentProfile = { name: "", avatar: "🙂" };
+    let currentHousehold = { id: "", name: "", mode: "personal", inviteCode: "" };
+    let householdMembers = [];
 
     const EXPENSE_CATEGORIES = [
         "อาหาร","ที่พัก","เดินทาง","ของใช้","ช้อปปิ้ง",
@@ -78,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const { data, error } = await sb
             .from("transactions")
             .select("id,user_id,type,description,amount,member,category,date,salary_round,created_at,updated_at")
-            .eq("household_id", HOUSEHOLD_ID)
+            .eq("household_id", currentHouseholdId)
             .order("date", { ascending: false })
             .order("created_at", { ascending: false });
 
@@ -100,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!local.length) return;
 
         const payload = local.map(t => ({
-            household_id: HOUSEHOLD_ID,
+            household_id: currentHouseholdId,
             user_id: session.user.id,
             type: t.type,
             description: t.description,
@@ -125,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const payload = {
-            household_id: HOUSEHOLD_ID,
+            household_id: currentHouseholdId,
             user_id: isEdit && existing?.userId ? existing.userId : session.user.id,
             type: transaction.type,
             description: transaction.description,
@@ -167,21 +170,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function totals(list = transactions) {
-        let income = 0, expense = 0, ken = 0, mint = 0;
-
+        let income = 0, expense = 0;
         list.forEach(t => {
-            if (t.type === "income") {
-                income += t.amount;
-                if (t.member === "เก้น") ken += t.amount;
-                if (t.member === "มิ้น") mint += t.amount;
-            } else {
-                expense += t.amount;
-                if (t.member === "เก้น") ken -= t.amount;
-                if (t.member === "มิ้น") mint -= t.amount;
-            }
+            if (t.type === "income") income += t.amount;
+            else expense += t.amount;
         });
-
-        return { income, expense, balance: income - expense, ken, mint };
+        return { income, expense, balance: income - expense };
     }
 
     /* =========================
@@ -263,6 +257,14 @@ document.addEventListener("DOMContentLoaded", () => {
             categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
 
         if (categories.includes(current)) select.value = current;
+
+        const memberSelect = $("filterMember");
+        if (memberSelect) {
+            const memberCurrent = memberSelect.value;
+            memberSelect.innerHTML = `<option value="all">ผู้บันทึกทั้งหมด</option>` +
+                householdMembers.map(m => `<option value="${esc(m.member_name)}">${esc(m.member_name)}</option>`).join("");
+            if (householdMembers.some(m => m.member_name === memberCurrent)) memberSelect.value = memberCurrent;
+        }
     }
 
     /* =========================
@@ -660,14 +662,28 @@ document.addEventListener("DOMContentLoaded", () => {
         if ($("balance")) $("balance").textContent = money(t.balance);
         if ($("income")) $("income").textContent = money(t.income);
         if ($("expense")) $("expense").textContent = money(t.expense);
-        if ($("kenMoney")) $("kenMoney").textContent = money(t.ken);
-        if ($("mintMoney")) $("mintMoney").textContent = money(t.mint);
+        if ($("walletTotal")) $("walletTotal").textContent = money(t.balance);
+        if ($("memberCount")) $("memberCount").textContent = `${Math.max(householdMembers.length,1)} คน`;
+        if ($("walletMembers")) $("walletMembers").textContent = `${Math.max(householdMembers.length,1)} คนในบัญชี`;
+        if ($("homeGreeting")) $("homeGreeting").textContent = `สวัสดี ${currentProfile.name || currentMemberName || ""}`.trim();
+        if ($("balanceSub")) $("balanceSub").textContent = currentHousehold.mode === "shared" ? "กระเป๋าเงินร่วมของสมาชิก" : "กระเป๋าเงินส่วนตัว";
+        if ($("walletTitle")) $("walletTitle").textContent = currentHousehold.mode === "shared" ? "กระเป๋าเงินกลาง" : "กระเป๋าเงินของฉัน";
+        if ($("headerSubtitle")) $("headerSubtitle").textContent = currentHousehold.name || (currentHousehold.mode === "shared" ? "บัญชีร่วม" : "บัญชีส่วนตัว");
+        if ($("currentMemberBadge")) $("currentMemberBadge").innerHTML = `<span class="profile-avatar-small">${esc(currentProfile.avatar || "🙂")}</span>${esc(currentProfile.name || currentMemberName || "ออนไลน์")}`;
 
         if ($("homeMonth")) {
             $("homeMonth").textContent = new Date().toLocaleDateString("th-TH", {
                 month:"long", year:"numeric"
             });
         }
+    }
+
+    function renderReportPersons() {
+        const container = $("reportPersons");
+        if (!container) return;
+        container.innerHTML = householdMembers.length
+            ? householdMembers.map(m => `<div><span>${esc(m.avatar || "🙂")} ${esc(m.member_name)}</span><strong>${m.user_id === session?.user?.id ? "คุณ" : "สมาชิก"}</strong></div>`).join("")
+            : `<div><span>สมาชิก</span><strong>-</strong></div>`;
     }
 
     function report() {
@@ -914,80 +930,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderSalaryReport() {
-        const container = $("salaryRoundSummary");
-        if (!container) return;
-
         const key = monthKey(salaryMonth);
-        const label = salaryMonth.toLocaleDateString("th-TH", {
-            month:"long", year:"numeric"
+        const salary = transactions.filter(t => t.date.startsWith(key) && t.type === "income" && t.category === "เงินเดือน");
+        const grouped = householdMembers.map(m => {
+            const rows = salary.filter(t => t.userId === m.user_id || t.member === m.member_name);
+            return { member:m.member_name, avatar:m.avatar||"🙂", rows, total:rows.reduce((s,t)=>s+t.amount,0) };
         });
-
-        if ($("salaryMonthInput")) $("salaryMonthInput").value = key;
-
-        const salary = transactions.filter(t =>
-            t.type === "income" &&
-            t.category === "เงินเดือน" &&
-            t.date.startsWith(key)
-        );
-
-        let ken1 = 0, ken2 = 0, kenOther = 0, mint = 0;
-
-        salary.forEach(t => {
-            if (t.member === "เก้น") {
-                if (t.salaryRound === "round1") ken1 += t.amount;
-                else if (t.salaryRound === "round2") ken2 += t.amount;
-                else kenOther += t.amount;
-            } else if (t.member === "มิ้น") {
-                mint += t.amount;
-            }
-        });
-
-        const kenTotal = ken1 + ken2 + kenOther;
-        const grandTotal = kenTotal + mint;
-        const kenRound1Status = ken1 > 0 ? "รอบ 1 บันทึกแล้ว" : "รอบ 1 ยังไม่มี";
-        const kenRound2Status = ken2 > 0 ? "รอบ 2 บันทึกแล้ว" : "รอบ 2 ยังไม่มี";
-        const mintStatus = mint > 0 ? "เงินเดือนมิ้นบันทึกแล้ว" : "เงินเดือนมิ้นยังไม่มี";
-
-        container.innerHTML = `
-            <div class="salary-month-grid">
-                <div class="salary-summary-card">
-                    <div class="salary-summary-top">
-                        <div class="avatar">ก</div>
-                        <div><b>เก้น</b><small>เงินเดือนเดือนนี้</small></div>
-                    </div>
-                    <div class="salary-detail"><span>รอบที่ 1</span><strong>${money(ken1)}</strong></div>
-                    <div class="salary-detail"><span>รอบที่ 2</span><strong>${money(ken2)}</strong></div>
-                    ${kenOther ? `<div class="salary-detail"><span>ไม่ระบุรอบ</span><strong>${money(kenOther)}</strong></div>` : ""}
-                    <div class="salary-total"><span>รวมเก้น</span><strong>${money(kenTotal)}</strong></div>
-                    <div class="salary-check">
-                        <span class="${ken1 > 0 ? "has-value" : "missing"}">${kenRound1Status}</span>
-                        <span class="${ken2 > 0 ? "has-value" : "missing"}">${kenRound2Status}</span>
-                    </div>
-                </div>
-
-                <div class="salary-summary-card">
-                    <div class="salary-summary-top">
-                        <div class="avatar">ม</div>
-                        <div><b>มิ้น</b><small>เงินเดือนเดือนนี้</small></div>
-                    </div>
-                    <div class="salary-detail"><span>เงินเดือน</span><strong>${money(mint)}</strong></div>
-                    <div class="salary-total"><span>รวมมิ้น</span><strong>${money(mint)}</strong></div>
-                    <div class="salary-check">
-                        <span class="${mint > 0 ? "has-value" : "missing"}">${mintStatus}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="salary-grand-total">
-                <span>เงินเดือนรวม ${esc(label)}</span>
-                <strong>${money(grandTotal)}</strong>
-            </div>
-
-            <div class="salary-report-note">
-                ${salary.length ? `พบรายการเงินเดือน ${salary.length} รายการในเดือนนี้` : "เดือนนี้ยังไม่มีรายการเงินเดือน"}
-                ${kenOther ? " · มีเงินเดือนเก้นที่ยังไม่ได้ระบุรอบ" : ""}
-            </div>
-        `;
+        const grandTotal = grouped.reduce((s,x)=>s+x.total,0);
+        const label = salaryMonth.toLocaleDateString("th-TH",{month:"long",year:"numeric"});
+        if ($("salaryMonthInput")) $("salaryMonthInput").value = `${salaryMonth.getFullYear()}-${String(salaryMonth.getMonth()+1).padStart(2,"0")}`;
+        if (!$("salaryRoundSummary")) return;
+        $("salaryRoundSummary").innerHTML = grouped.length
+            ? grouped.map(x => {
+                let details = "";
+                if (x.member === "เก้น") {
+                    const r1=x.rows.filter(t=>t.salaryRound==="round1").reduce((s,t)=>s+t.amount,0);
+                    const r2=x.rows.filter(t=>t.salaryRound==="round2").reduce((s,t)=>s+t.amount,0);
+                    details=`<div class="salary-detail"><span>รอบที่ 1</span><strong>${money(r1)}</strong></div><div class="salary-detail"><span>รอบที่ 2</span><strong>${money(r2)}</strong></div>`;
+                } else {
+                    details=`<div class="salary-detail"><span>เงินเดือน</span><strong>${money(x.total)}</strong></div>`;
+                }
+                return `<div class="salary-summary-card"><div class="salary-summary-head"><span class="salary-summary-person">${esc(x.avatar)} ${esc(x.member)}</span><strong>${money(x.total)}</strong></div>${details}</div>`;
+            }).join("") + `<div class="salary-grand-total"><span>เงินเดือนรวม ${esc(label)}</span><strong>${money(grandTotal)}</strong></div><div class="salary-report-note">${salary.length ? `พบรายการเงินเดือน ${salary.length} รายการในเดือนนี้` : "เดือนนี้ยังไม่มีรายการเงินเดือน"}</div>`
+            : `<div class="empty">ยังไม่มีสมาชิกในบัญชี</div>`;
     }
 
     /* =========================
@@ -1135,8 +1100,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================
-       Authentication / Online Sync
+       Authentication / Accounts
     ========================= */
+
+    let authMode = "login";
+    let signupMode = "personal";
+    let signupAvatar = "🙂";
 
     function showAuthError(message) {
         const el = $("authError");
@@ -1149,31 +1118,102 @@ document.addEventListener("DOMContentLoaded", () => {
         $("appShell")?.classList.toggle("auth-hidden", !visible);
     }
 
-    async function setupAuthenticatedUser() {
-        const { data: member, error: memberError } = await sb
-            .from("household_members")
-            .select("member_name")
-            .eq("household_id", HOUSEHOLD_ID)
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-        if (memberError) throw memberError;
-        if (!member) throw new Error("บัญชีนี้ยังไม่ได้ถูกผูกกับสมาชิก เก้น/มิ้น");
+    function setAuthMode(mode) {
+        authMode = mode;
+        $("loginTab")?.classList.toggle("active", mode === "login");
+        $("signupTab")?.classList.toggle("active", mode === "signup");
+        $("signupFields")?.classList.toggle("hidden", mode !== "signup");
+        $("authSubmit").textContent = mode === "signup" ? "สมัครใช้งาน" : "เข้าสู่ระบบ";
+        $("authNote").textContent = mode === "signup" ? "หลังสมัครแล้ว ระบบจะให้ตั้งค่าบัญชี" : "ใช้บัญชี Supabase เดิมได้เลย";
+        showAuthError("");
+    }
 
-        currentMemberName = member.member_name;
+    function setOnboardingMode(mode) {
+        document.querySelectorAll("#onboardingOverlay .mode-choice").forEach(x => x.classList.toggle("selected", x.dataset.mode === mode));
+        $("onboardingInviteField")?.classList.toggle("hidden", mode !== "join");
+        $("onboardingOverlay").dataset.mode = mode;
+    }
+
+    function setOnboardingAvatar(avatar) {
+        $("onboardingOverlay").dataset.avatar = avatar;
+        document.querySelectorAll("#onboardingAvatarPicker .avatar-choice").forEach(x => x.classList.toggle("selected", x.dataset.avatar === avatar));
+    }
+
+    async function getMyHouseholds() {
+        const { data, error } = await sb.rpc("get_my_households");
+        if (error) throw error;
+        return data || [];
+    }
+
+    async function loadHouseholdContext() {
+        const rows = await getMyHouseholds();
+        if (!rows.length) return false;
+        const row = rows.find(x => x.id === currentHouseholdId) || rows[0];
+        currentHouseholdId = row.id;
+        localStorage.setItem("baantheung_household_id", currentHouseholdId);
+        currentHousehold = { id:row.id, name:row.name || "", mode:row.mode || "personal", inviteCode:row.invite_code || "" };
+        currentMemberName = row.member_name || "";
+        currentProfile = { name:row.member_name || "", avatar:row.avatar || "🙂" };
+
+        const { data: members, error } = await sb.from("household_members").select("user_id,member_name,avatar,role").eq("household_id",currentHouseholdId).order("created_at",{ascending:true});
+        if (error) throw error;
+        householdMembers = members || [];
         updateAutoMemberDisplay(currentMemberName);
-        if ($("currentMemberBadge")) $("currentMemberBadge").textContent = currentMemberName + " · ออนไลน์";
-        if ($("authMemberHint")) $("authMemberHint").textContent = "เข้าสู่ระบบในชื่อ " + currentMemberName;
+        return true;
+    }
 
-        const { data: cloudBefore, error: cloudError } = await sb
-            .from("transactions")
-            .select("id")
-            .eq("household_id", HOUSEHOLD_ID)
-            .limit(1);
-        if (cloudError) throw cloudError;
-        const hadCloudData = Boolean(cloudBefore?.length);
+    function onboardingModal(open) {
+        const el = $("onboardingOverlay");
+        if (!el) return;
+        el.classList.toggle("show", open);
+        document.body.style.overflow = open ? "hidden" : "";
+    }
 
+    async function completeOnboarding() {
+        const name = $("profileName")?.value.trim();
+        const mode = $("onboardingOverlay")?.dataset.mode || "personal";
+        const avatar = $("onboardingOverlay")?.dataset.avatar || "🙂";
+        const invite = $("onboardingInvite")?.value.trim().toUpperCase();
+        if (!name) { $("onboardingError").textContent="กรุณาใส่ชื่อของคุณ"; return; }
+        if (mode === "join" && !invite) { $("onboardingError").textContent="กรุณาใส่รหัสเชิญ"; return; }
+        const button=$("onboardingSubmit"); button.disabled=true; button.textContent="กำลังตั้งค่าบัญชี…"; $("onboardingError").textContent="";
+        try {
+            let result;
+            if (mode === "join") {
+                const {data,error}=await sb.rpc("join_household_by_code",{p_invite_code:invite,p_member_name:name,p_avatar:avatar});
+                if(error) throw error; result=data;
+            } else {
+                const {data,error}=await sb.rpc("create_household_for_user",{p_member_name:name,p_avatar:avatar,p_mode:mode});
+                if(error) throw error; result=data;
+            }
+            currentHouseholdId=result;
+            localStorage.setItem("baantheung_household_id",result);
+            await loadHouseholdContext();
+            onboardingModal(false);
+            await loadFromSupabase();
+            render();
+            if (currentHousehold.mode === "shared" && currentHousehold.inviteCode) {
+                alert(`สร้างบัญชีร่วมสำเร็จ\nรหัสเชิญ: ${currentHousehold.inviteCode}\nส่งรหัสนี้ให้อีกคนเพื่อเข้าบัญชีร่วม`);
+            }
+        } catch(err) {
+            console.error(err); $("onboardingError").textContent=err.message || "ตั้งค่าบัญชีไม่สำเร็จ";
+        } finally { button.disabled=false; button.textContent="เริ่มใช้งาน"; }
+    }
+
+    async function setupAuthenticatedUser() {
+        const hasHousehold=await loadHouseholdContext();
+        if (!hasHousehold) {
+            setAppVisible(true);
+            $("appShell")?.classList.add("auth-hidden");
+            const pending=JSON.parse(localStorage.getItem("baantheung_pending_onboarding")||"null");
+            $("profileName").value=pending?.name || session.user.user_metadata?.name || "";
+            setOnboardingAvatar(pending?.avatar || session.user.user_metadata?.avatar || "🙂");
+            setOnboardingMode(pending?.mode || "personal");
+            if(pending?.invite) $("onboardingInvite").value=pending.invite;
+            onboardingModal(true);
+            return;
+        }
         await loadFromSupabase();
-        if (!hadCloudData) await importLocalDataIfCloudEmpty();
         render();
         setAppVisible(true);
     }
@@ -1182,68 +1222,56 @@ document.addEventListener("DOMContentLoaded", () => {
         $("appShell")?.classList.add("auth-hidden");
         $("loadingScreen")?.classList.remove("hidden");
         $("authScreen")?.classList.add("hidden");
+        const {data,error}=await sb.auth.getSession();
+        if(error) throw error;
+        if(data.session){ session=data.session; await setupAuthenticatedUser(); }
+        else setAppVisible(false);
 
-        const { data, error } = await sb.auth.getSession();
-        if (error) throw error;
-
-        if (data.session) {
-            session = data.session;
-            try { await setupAuthenticatedUser(); }
-            catch (err) {
-                console.error(err);
-                await sb.auth.signOut();
-                setAppVisible(false);
-                showAuthError(err.message || "เชื่อมต่อบัญชีไม่สำเร็จ");
-            }
-        } else {
-            setAppVisible(false);
-        }
-
-        sb.auth.onAuthStateChange(async (_event, newSession) => {
-            session = newSession;
-            if (!newSession) {
-                transactions = [];
-                currentMemberName = "";
-                setAppVisible(false);
-                return;
-            }
-            try { await setupAuthenticatedUser(); }
-            catch (err) {
-                console.error(err);
-                showAuthError(err.message || "เชื่อมต่อบัญชีไม่สำเร็จ");
-                await sb.auth.signOut();
-            }
+        sb.auth.onAuthStateChange(async (_event,newSession)=>{
+            session=newSession;
+            if(!newSession){transactions=[];householdMembers=[];currentMemberName="";currentHouseholdId="";setAppVisible(false);return;}
+            try{await setupAuthenticatedUser();}catch(err){console.error(err);showAuthError(err.message||"เชื่อมต่อบัญชีไม่สำเร็จ");}
         });
     }
 
-    $("authForm")?.addEventListener("submit", async e => {
+    $("loginTab")?.addEventListener("click",()=>setAuthMode("login"));
+    $("signupTab")?.addEventListener("click",()=>setAuthMode("signup"));
+
+    document.querySelectorAll("#signupAvatarPicker .avatar-choice").forEach(btn=>btn.onclick=()=>{
+        signupAvatar=btn.dataset.avatar;
+        document.querySelectorAll("#signupAvatarPicker .avatar-choice").forEach(x=>x.classList.toggle("selected",x===btn));
+    });
+    document.querySelectorAll("#signupFields .mode-choice").forEach(btn=>btn.onclick=()=>{
+        signupMode=btn.dataset.mode;
+        document.querySelectorAll("#signupFields .mode-choice").forEach(x=>x.classList.toggle("selected",x===btn));
+        $("inviteField")?.classList.toggle("hidden",signupMode!=="join");
+    });
+    document.querySelectorAll("#onboardingOverlay .mode-choice").forEach(btn=>btn.onclick=()=>setOnboardingMode(btn.dataset.mode));
+    document.querySelectorAll("#onboardingAvatarPicker .avatar-choice").forEach(btn=>btn.onclick=()=>setOnboardingAvatar(btn.dataset.avatar));
+
+    $("authForm")?.addEventListener("submit",async e=>{
         e.preventDefault();
-        const email = $("authEmail")?.value.trim();
-        const password = $("authPassword")?.value;
-        const button = $("authForm")?.querySelector('button[type="submit"]');
-        showAuthError("");
-        if (button) { button.disabled = true; button.textContent = "กำลังเข้าสู่ระบบ…"; }
-
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) {
-            showAuthError(error.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-            if (button) { button.disabled = false; button.textContent = "เข้าสู่ระบบ"; }
-            return;
-        }
-        session = data.session;
-        try {
-            await setupAuthenticatedUser();
-        } catch (err) {
-            showAuthError(err.message || "ไม่สามารถเปิดบัญชีได้");
-            await sb.auth.signOut();
-        }
-        if (button) { button.disabled = false; button.textContent = "เข้าสู่ระบบ"; }
+        const email=$("authEmail")?.value.trim(), password=$("authPassword")?.value, button=$("authSubmit");
+        showAuthError(""); button.disabled=true; button.textContent=authMode==="signup"?"กำลังสมัคร…":"กำลังเข้าสู่ระบบ…";
+        try{
+            if(authMode==="signup"){
+                const name=$("signupName")?.value.trim();
+                if(!name) throw new Error("กรุณาใส่ชื่อที่ใช้ในบัญชี");
+                const {data,error}=await sb.auth.signUp({email,password,options:{data:{name,avatar:signupAvatar}}});
+                if(error) throw error;
+                localStorage.setItem("baantheung_pending_onboarding",JSON.stringify({name,avatar:signupAvatar,mode:signupMode,invite:$("signupInvite")?.value.trim().toUpperCase()||""}));
+                if(!data.session){showAuthError("สมัครสำเร็จ กรุณายืนยันอีเมลก่อน แล้วกลับมาเข้าสู่ระบบ");setAuthMode("login");$("authEmail").value=email;return;}
+                session=data.session; await setupAuthenticatedUser();
+            }else{
+                const {data,error}=await sb.auth.signInWithPassword({email,password});
+                if(error) throw error; session=data.session; await setupAuthenticatedUser();
+            }
+        }catch(err){console.error(err);showAuthError(err.message||"ไม่สามารถดำเนินการได้");}
+        finally{button.disabled=false;button.textContent=authMode==="signup"?"สมัครใช้งาน":"เข้าสู่ระบบ";}
     });
 
-    $("logoutButton")?.addEventListener("click", async () => {
-        if (!confirm("ต้องการออกจากระบบหรือไม่?")) return;
-        await sb.auth.signOut();
-    });
+    $("logoutButton")?.addEventListener("click",async()=>{if(confirm("ต้องการออกจากระบบหรือไม่?")) await sb.auth.signOut();});
+    $("onboardingSubmit")?.addEventListener("click",completeOnboarding);
 
     /* =========================
        Render
@@ -1255,6 +1283,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderRecent();
         renderAll();
         report();
+        renderReportPersons();
 
         if ($("calendarPage")?.classList.contains("active")) {
             calendar();
