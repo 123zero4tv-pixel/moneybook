@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>บันทึกบัญชีออนไลน์</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="authScreen" class="auth-screen">
+    <div class="auth-card auth-card-wide">
+        <div class="auth-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/>
+                <path d="M4 5.5V22M8 7h8M8 11h8"/>
+            </svg>
+        </div>
+        <h2>บันทึกบัญชี</h2>
+        <p>บัญชีรายรับ–รายจ่ายออนไลน์</p>
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab active" id="loginTab">เข้าสู่ระบบ</button>
+            <button type="button" class="auth-tab" id="signupTab">สมัครใช้งาน</button>
+        </div>
+        <form id="authForm">
+            <div id="signupFields" class="signup-fields hidden">
+                <label for="signupName">ชื่อที่ใช้ในบัญชี</label>
+                <input id="signupName" type="text" maxlength="40" placeholder="เช่น นัท">
+                <label>รูปโปรไฟล์</label>
+                <div class="avatar-picker" id="signupAvatarPicker">
+                    <button type="button" class="avatar-choice selected" data-avatar="🙂">🙂</button>
+                    <button type="button" class="avatar-choice" data-avatar="😀">😀</button>
+                    <button type="button" class="avatar-choice" data-avatar="😎">😎</button>
+                    <button type="button" class="avatar-choice" data-avatar="🧑🏻">🧑🏻</button>
+                    <button type="button" class="avatar-choice" data-avatar="👩🏻">👩🏻</button>
+                    <button type="button" class="avatar-choice" data-avatar="👨🏻">👨🏻</button>
+                </div>
+                <label>รูปแบบบัญชี</label>
+                <div class="mode-picker">
+                    <button type="button" class="mode-choice selected" data-mode="personal">👤<span>ใช้คนเดียว</span><small>มีแค่คุณ</small></button>
+                    <button type="button" class="mode-choice" data-mode="shared">👥<span>สร้างบัญชีร่วม</span><small>ชวนคนอื่นเข้ามา</small></button>
+                    <button type="button" class="mode-choice" data-mode="join">🔗<span>เข้าบัญชีร่วม</span><small>มีรหัสเชิญอยู่แล้ว</small></button>
+                </div>
+                <div id="inviteField" class="invite-field hidden">
+                    <label for="signupInvite">รหัสเชิญ</label>
+                    <input id="signupInvite" type="text" maxlength="20" placeholder="เช่น ABCD-1234">
+                </div>
+            </div>
+            <label for="authEmail">อีเมล</label>
+            <input id="authEmail" type="email" autocomplete="email" required placeholder="อีเมลของคุณ">
+            <label for="authPassword">รหัสผ่าน</label>
+            <input id="authPassword" type="password" autocomplete="current-password" required placeholder="รหัสผ่าน">
+            <button class="primary-btn auth-submit" type="submit" id="authSubmit">เข้าสู่ระบบ</button>
+            <div id="authError" class="auth-error"></div>
+            <div id="authNote" class="auth-note">ใช้บัญชี Supabase เดิมได้เลย</div>
+        </form>
+    </div>
+</div>
+<div id="loadingScreen" class="auth-screen loading-screen">
+    <div class="auth-card loading-card">กำลังเชื่อมต่อบัญชีออนไลน์…</div>
+</div>
+<div class="app" id="appShell">
+
+<header class="header">
+    <div class="brand">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/>
+                <path d="M4 5.5V22M8 7h8M8 11h8"/>
+            </svg>
+        </div>
+        <div>
+            <h1>บันทึกบัญชี</h1>
+            <p id="headerSubtitle">บัญชีร่วม</p>
+        </div>
+    </div>
+    <div class="header-actions">
+        <div class="member-badge profile-badge" id="currentMemberBadge">ออนไลน์</div>
+        <button class="logout-btn" id="logoutButton" type="button">ออกจากระบบ</button>
+    </div>
+</header>
+
+<main class="page active" id="homePage">
+    <div class="top-row">
+        <div>
+            <div class="section-label">ภาพรวมการเงิน</div>
+            <h2 class="greeting" id="homeGreeting">สวัสดี</h2>
+        </div>
+        <div class="member-badge date-button" id="homeMonth">เดือนนี้</div>
+    </div>
+
+    <section class="balance-card">
+        <div>
+            <div class="balance-label">ยอดคงเหลือรวม</div>
+            <div class="balance" id="balance">฿0.00</div>
+            <div class="balance-sub" id="balanceSub">เงินของบัญชี</div>
+        </div>
+        <button class="primary-btn" id="addButton" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            เพิ่มรายการ
+        </button>
+    </section>
+
+    <section class="summary">
+        <div class="summary-card">
+            <div class="summary-icon income-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 19V5M6 11l6-6 6 6"/>
+                </svg>
+            </div>
+            <div><div class="summary-title">รายรับ</div><div class="summary-value" id="income">฿0.00</div></div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon expense-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14m6-6-6 6-6-6"/>
+                </svg>
+            </div>
+            <div><div class="summary-title">รายจ่าย</div><div class="summary-value" id="expense">฿0.00</div></div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon member-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+                    <path d="M3 20c0-3.2 2.7-5 6-5s6 1.8 6 5M15 15c3 0 5 1.5 5 4"/>
+                </svg>
+            </div>
+            <div><div class="summary-title">สมาชิก</div><div class="summary-value" id="memberCount">1 คน</div></div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-title">กระเป๋าเงิน</div>
+        <h2 class="section-heading" id="walletTitle">กระเป๋าเงินของฉัน</h2>
+        <div class="shared-wallet-card">
+            <div class="wallet-avatar">฿</div>
+            <div class="wallet-info">
+                <div class="member-name">เงินที่ใช้ในบัญชีนี้</div>
+                <div class="wallet-total" id="walletTotal">฿0.00</div>
+                <small id="walletMembers">1 คนในบัญชี</small>
+            </div>
+            <div class="wallet-badge">รวมทั้งหมด</div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="transaction-box">
+            <div class="transaction-header">
+                <div><div class="section-title">รายการล่าสุด</div><h2>รายการทั้งหมด</h2></div>
+                <button class="view-all" id="viewAllButton" type="button">ดูทั้งหมด</button>
+            </div>
+            <div id="recentTransactions"></div>
+        </div>
+    </section>
+</main>
+
+<main class="page" id="transactionsPage">
+    <div class="page-title">
+        <div class="section-label">ประวัติการเงิน</div>
+        <h2>รายการทั้งหมด</h2>
+        <p>ค้นหาและกรองรายรับรายจ่ายของบัญชีนี้</p>
+    </div>
+
+    <div class="filter-box">
+        <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+            </svg>
+            <input id="searchInput" type="search" placeholder="ค้นหารายการ...">
+        </div>
+        <div class="filter-row">
+            <select id="filterType">
+                <option value="all">ประเภททั้งหมด</option>
+                <option value="income">รายรับ</option>
+                <option value="expense">รายจ่าย</option>
+            </select>
+            <select id="filterMember">
+                <option value="all">ผู้บันทึกทั้งหมด</option>
+            </select>
+            <select id="filterCategory">
+                <option value="all">หมวดหมู่ทั้งหมด</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="result-summary">
+        <span id="transactionCount">0 รายการ</span>
+        <span class="result-total" id="transactionTotal">฿0.00</span>
+    </div>
+    <div class="list-finance-summary">
+        <div class="list-finance-card current"><span>ยอดคงเหลือปัจจุบัน</span><strong id="listCurrentBalance">฿0.00</strong><small id="listCurrentDate">ณ วันนี้</small></div>
+        <div class="list-finance-card income"><span>รายรับ (ถึงวันนี้)</span><strong id="listCurrentIncome">฿0.00</strong></div>
+        <div class="list-finance-card expense"><span>รายจ่าย (ถึงวันนี้)</span><strong id="listCurrentExpense">฿0.00</strong></div>
+        <div class="list-finance-card future"><span>เงินที่จะเข้าภายหลัง</span><strong id="listFutureIncome">฿0.00</strong><small id="listFutureCount">0 รายการ</small></div>
+    </div>
+    <div class="list-group-title" id="occurredTitle">รายการที่เกิดขึ้นแล้ว (0)</div>
+    <div class="all-transactions" id="occurredTransactions"></div>
+    <div class="list-group-title future-title" id="futureTitle">รายการที่จะเกิดขึ้น (0)</div>
+    <div class="all-transactions future-list" id="futureTransactions"></div>
+    <div class="all-transactions" id="allTransactions" style="display:none"></div>
+</main>
+
+<main class="page" id="calendarPage">
+    <div class="page-title">
+        <div class="section-label">ปฏิทิน</div>
+        <h2>ปฏิทินรายการ</h2>
+        <p>แตะวันที่เพื่อดูรายการของวันนั้น</p>
+    </div>
+    <section class="calendar-card">
+        <div class="calendar-header">
+            <button class="icon-button" id="previousMonth" type="button">‹</button>
+            <strong id="calendarMonth"></strong>
+            <button class="icon-button" id="nextMonth" type="button">›</button>
+        </div>
+        <div class="calendar-week">
+            <span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span><span>อา</span>
+        </div>
+        <div class="calendar-days" id="calendarDays"></div>
+    </section>
+    <section class="selected-date-box">
+        <div class="section-title">รายการของวันที่เลือก</div>
+        <h3 id="selectedDateTitle">เลือกวันที่ในปฏิทิน</h3>
+        <div id="selectedDateTransactions"></div>
+    </section>
+</main>
+
+<main class="page" id="reportPage">
+    <div class="page-title">
+        <div class="section-label">รายงาน</div>
+        <h2>สรุปการเงิน</h2>
+        <p>ภาพรวมจากรายการที่เกิดขึ้นแล้วถึงวันนี้</p>
+    </div>
+
+    <div class="report-grid">
+        <div class="report-card"><span>รายรับทั้งหมด</span><strong id="reportIncome">฿0.00</strong><small>รวมรายการที่เกิดขึ้นแล้วถึงวันนี้</small></div>
+        <div class="report-card"><span>รายจ่ายทั้งหมด</span><strong id="reportExpense">฿0.00</strong><small>รวมรายการที่เกิดขึ้นแล้วถึงวันนี้</small></div>
+        <div class="report-card"><span>คงเหลือทั้งหมด</span><strong id="reportBalance">฿0.00</strong><small>ไม่นับรายการอนาคต</small></div>
+        <div class="report-card"><span>จำนวนรายการ</span><strong id="reportCount">0</strong><small>รายการที่เกิดขึ้นแล้วถึงวันนี้</small></div>
+    </div>
+
+    <section class="report-section report-status-section">
+        <div class="section-title">สถานะเงิน</div>
+        <div class="report-status-grid">
+            <div class="status-card current">
+                <div><span>เงินที่มีจริงถึงวันนี้</span><small>ไม่นับรายการอนาคต</small></div>
+                <strong id="reportCurrentBalance">฿0.00</strong>
+            </div>
+            <div class="status-card future">
+                <div><span>เงินที่จะเข้าในอนาคต</span><small id="reportFutureIncomeCount">0 รายการ</small></div>
+                <strong id="reportFutureIncome">฿0.00</strong>
+            </div>
+            <div class="status-card future-expense">
+                <div><span>เงินที่จะจ่ายในอนาคต</span><small id="reportFutureExpenseCount">0 รายการ</small></div>
+                <strong id="reportFutureExpense">฿0.00</strong>
+            </div>
+        </div>
+        <div class="report-status-note" id="reportStatusNote">ยอดปัจจุบันคำนวณถึงวันนี้</div>
+    </section>
+
+    <section class="report-section">
+        <div class="section-title">รายจ่ายตามหมวดหมู่</div>
+        <div id="expenseByCategory"></div>
+    </section>
+
+    <section class="report-section">
+        <div class="section-title">สมาชิกในบัญชี</div>
+        <div class="report-persons" id="reportPersons"></div>
+    </section>
+
+    <section class="report-section six-month-section">
+        <div class="six-month-head">
+            <div>
+                <div class="section-title">ภาพรวม 6 เดือนย้อนหลัง</div>
+                <h3 id="sixMonthTitle">รายรับและรายจ่าย</h3>
+            </div>
+            <div class="six-month-legend">
+                <span><i class="legend-income"></i>รายรับ</span>
+                <span><i class="legend-expense"></i>รายจ่าย</span>
+            </div>
+        </div>
+        <div class="six-month-selected" id="sixMonthSelected">
+            <div>
+                <span id="sixMonthSelectedName">เดือนล่าสุด</span>
+                <small>แตะเดือนเพื่อดูรายละเอียด</small>
+            </div>
+            <div class="six-month-selected-values">
+                <span class="selected-income">รายรับ <strong id="sixMonthSelectedIncome">฿0.00</strong></span>
+                <span class="selected-expense">รายจ่าย <strong id="sixMonthSelectedExpense">฿0.00</strong></span>
+                <span class="selected-balance">คงเหลือ <strong id="sixMonthSelectedBalance">฿0.00</strong></span>
+            </div>
+        </div>
+        <div class="six-month-chart-wrap">
+            <div class="chart-scale" id="sixMonthScale"></div>
+            <div class="six-month-chart" id="sixMonthChart"></div>
+        </div>
+        <div class="six-month-highlights">
+            <div>
+                <span>รายรับสูงสุด</span>
+                <strong id="sixMonthBestIncome">-</strong>
+            </div>
+            <div>
+                <span>รายจ่ายสูงสุด</span>
+                <strong id="sixMonthBestExpense">-</strong>
+            </div>
+            <div>
+                <span>ใช้จ่ายเฉลี่ย/เดือน</span>
+                <strong id="sixMonthAvgExpense">฿0.00</strong>
+            </div>
+        </div>
+
+        <div class="six-month-detail" id="sixMonthDetail">
+            <div class="six-month-detail-head">
+                <div>
+                    <div class="section-title">รายการของเดือน</div>
+                    <h4 id="sixMonthDetailTitle">กันยายน 2569</h4>
+                </div>
+                <button type="button" class="detail-view-all" id="sixMonthViewAll">ดูรายการทั้งหมด</button>
+            </div>
+            <div class="six-month-detail-summary">
+                <div><span>รายรับ</span><strong id="sixMonthDetailIncome">฿0.00</strong></div>
+                <div><span>รายจ่าย</span><strong id="sixMonthDetailExpense">฿0.00</strong></div>
+                <div><span>คงเหลือ</span><strong id="sixMonthDetailBalance">฿0.00</strong></div>
+            </div>
+            <div class="six-month-detail-list" id="sixMonthDetailList"></div>
+        </div>
+    </section>
+
+    <section class="report-section monthly-expense-section">
+        <div class="monthly-expense-head">
+            <div>
+                <div class="section-title">รายจ่ายรายเดือน</div>
+                <h3 id="expenseMonthTitle">เดือนนี้</h3>
+            </div>
+            <div class="month-switcher">
+                <button class="icon-button" id="expensePrevMonth" type="button">‹</button>
+                <button class="month-current" id="expenseMonthLabel" type="button">เดือนนี้</button>
+                <button class="icon-button" id="expenseNextMonth" type="button">›</button>
+            </div>
+        </div>
+        <div class="monthly-total-card">
+            <span>รายจ่ายของเดือน</span>
+            <strong id="monthlyExpenseTotal">฿0.00</strong>
+            <small id="monthlyExpenseCount">0 รายการ</small>
+        </div>
+        <div class="expense-compare">
+            <div><span>เดือนก่อน</span><strong id="previousMonthExpense">฿0.00</strong></div>
+            <div><span>เปลี่ยนแปลง</span><strong id="expenseChange">฿0.00</strong></div>
+        </div>
+        <div class="expense-category-list" id="monthlyExpenseByCategory"></div>
+    </section>
+
+    <section class="report-section salary-report">
+        <div class="salary-report-header">
+            <div>
+                <div class="section-title">เงินเดือนรายเดือน</div>
+                <h3>สรุปเงินเดือนของเรา</h3>
+            </div>
+            <div class="salary-month-picker">
+                <button class="icon-button" id="salaryPrev" type="button" aria-label="เดือนก่อนหน้า">‹</button>
+                <input class="salary-month-input" id="salaryMonthInput" type="month" aria-label="เลือกเดือนเงินเดือน">
+                <button class="icon-button" id="salaryNext" type="button" aria-label="เดือนถัดไป">›</button>
+            </div>
+        </div>
+        <div id="salaryRoundSummary"></div>
+    </section>
+</main>
+
+</div>
+
+<nav class="bottom-nav">
+    <button class="nav-btn active" data-page="homePage" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/>
+        </svg><span>หน้าหลัก</span>
+    </button>
+    <button class="nav-btn" data-page="transactionsPage" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M5 6h14M5 12h14M5 18h14"/>
+        </svg><span>รายการ</span>
+    </button>
+    <button class="nav-btn add-nav" id="addNavButton" type="button" aria-label="เพิ่มรายการ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+        </svg>
+    </button>
+    <button class="nav-btn" data-page="calendarPage" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg><span>ปฏิทิน</span>
+    </button>
+    <button class="nav-btn" data-page="reportPage" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 19V5M4 19h16M7 15l3-4 3 2 5-6"/>
+        </svg><span>รายงาน</span>
+    </button>
+</nav>
+
+<div class="modal-overlay" id="onboardingOverlay">
+    <div class="modal onboarding-modal">
+        <div class="modal-header">
+            <div><div class="section-title">ตั้งค่าบัญชี</div><h2>เริ่มใช้งานกันเลย</h2></div>
+        </div>
+        <p class="onboarding-text">เลือกว่าจะใช้บัญชีคนเดียว หรือใช้กระเป๋าเงินร่วมกับคนอื่น</p>
+        <div class="form-group">
+            <label for="profileName">ชื่อของคุณ</label>
+            <input id="profileName" maxlength="40" placeholder="เช่น นัท">
+        </div>
+        <div class="form-group">
+            <label>รูปโปรไฟล์</label>
+            <div class="avatar-picker" id="onboardingAvatarPicker">
+                <button type="button" class="avatar-choice selected" data-avatar="🙂">🙂</button>
+                <button type="button" class="avatar-choice" data-avatar="😀">😀</button>
+                <button type="button" class="avatar-choice" data-avatar="😎">😎</button>
+                <button type="button" class="avatar-choice" data-avatar="🧑🏻">🧑🏻</button>
+                <button type="button" class="avatar-choice" data-avatar="👩🏻">👩🏻</button>
+                <button type="button" class="avatar-choice" data-avatar="👨🏻">👨🏻</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>รูปแบบบัญชี</label>
+            <div class="mode-picker">
+                <button type="button" class="mode-choice selected" data-mode="personal">👤<span>ใช้คนเดียว</span><small>กระเป๋าเงินของคุณ</small></button>
+                <button type="button" class="mode-choice" data-mode="shared">👥<span>สร้างบัญชีร่วม</span><small>สร้างรหัสเชิญ</small></button>
+                <button type="button" class="mode-choice" data-mode="join">🔗<span>เข้าบัญชีร่วม</span><small>ใช้รหัสเชิญ</small></button>
+            </div>
+        </div>
+        <div id="onboardingInviteField" class="form-group hidden">
+            <label for="onboardingInvite">รหัสเชิญ</label>
+            <input id="onboardingInvite" maxlength="20" placeholder="เช่น ABCD-1234">
+        </div>
+        <button class="save-btn" id="onboardingSubmit" type="button">เริ่มใช้งาน</button>
+        <div id="onboardingError" class="auth-error"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <form class="modal" id="transactionForm">
+        <div class="modal-header">
+            <h2 id="modalTitle">เพิ่มรายการ</h2>
+            <button class="close-btn" id="closeModal" type="button">×</button>
+        </div>
+
+        <div class="form-group">
+            <label>ประเภท</label>
+            <div class="type-buttons">
+                <button class="type-btn selected" data-type="expense" type="button">รายจ่าย</button>
+                <button class="type-btn" data-type="income" type="button">รายรับ</button>
+            </div>
+            <input id="transactionType" type="hidden" value="expense">
+        </div>
+
+        <div class="form-group">
+            <label for="description">รายการ</label>
+            <input id="description" placeholder="เช่น ค่าข้าว, เงินเดือน" required>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">จำนวนเงิน</label>
+            <input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required>
+        </div>
+
+        <div class="form-group">
+            <label>ผู้บันทึก</label>
+            <div class="auto-member" id="autoMemberDisplay">ระบบจะบันทึกตามผู้ที่เข้าสู่ระบบ</div>
+        </div>
+
+        <div class="form-group">
+            <label for="category">หมวดหมู่ <span>(ไม่จำเป็น)</span></label>
+            <select id="category"></select>
+        </div>
+
+        <div class="form-group salary-round-group" id="salaryRoundGroup">
+            <label for="salaryRound">รอบเงินเดือน <span>(สำหรับเงินเดือน)</span></label>
+            <select id="salaryRound"></select>
+            <small id="salaryRoundHint"></small>
+        </div>
+
+        <div class="form-group">
+            <label for="date">วันที่</label>
+            <input id="date" type="date" required>
+        </div>
+
+        <button class="save-btn" type="submit">บันทึกรายการ</button>
+    </form>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
