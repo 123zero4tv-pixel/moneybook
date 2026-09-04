@@ -228,3 +228,29 @@ button,input,select{font:inherit}button{cursor:pointer}
     font-weight: 600;
     box-sizing: border-box;
 }
+
+/* V12 */
+.auth-card-wide{width:min(520px,100%)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;background:var(--soft);border-radius:14px;margin:18px 0}
+.auth-tab{border:0;background:transparent;color:var(--muted);padding:10px;border-radius:10px;font-weight:800}
+.auth-tab.active{background:#fff;color:var(--purple);box-shadow:0 3px 12px rgba(70,40,110,.08)}
+.signup-fields.hidden,.hidden{display:none!important}
+.auth-note{margin-top:10px;color:var(--muted);font-size:10px;text-align:center}
+.avatar-picker{display:flex;flex-wrap:wrap;gap:8px}
+.avatar-choice{width:45px;height:45px;border:1px solid var(--border);background:#fff;border-radius:13px;font-size:22px}
+.avatar-choice.selected{border-color:#bda5df;background:var(--light);box-shadow:0 0 0 3px rgba(112,72,184,.08)}
+.mode-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mode-choice{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:800;font-size:20px}
+.mode-choice span{font-size:11px;color:var(--dark)}
+.mode-choice small{font-size:9px;color:var(--muted);font-weight:500;text-align:center}
+.mode-choice.selected{border-color:#bda5df;background:var(--light);color:var(--purple)}
+.invite-field{padding-top:4px}
+.shared-wallet-card{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+.wallet-avatar{width:52px;height:52px;border-radius:16px;background:var(--light);color:var(--purple);display:grid;place-items:center;font-size:22px;font-weight:900}
+.wallet-info{flex:1;min-width:0}.wallet-total{font-size:25px;font-weight:900;color:var(--dark);margin-top:3px}.wallet-info small{color:var(--muted);font-size:10px}
+.wallet-badge{padding:7px 10px;background:var(--soft);color:var(--purple);border-radius:999px;font-size:9px;font-weight:800}
+.profile-badge{display:flex;align-items:center;gap:6px}
+.profile-avatar-small{font-size:16px}
+.onboarding-modal{width:min(100%,520px)}
+.onboarding-text{color:var(--muted);font-size:12px;line-height:1.6;margin-top:-10px}
+@media(max-width:700px){.mode-picker{grid-template-columns:1fr}.shared-wallet-card{align-items:flex-start}.wallet-badge{display:none}}
