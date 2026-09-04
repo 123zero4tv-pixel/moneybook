@@ -4,8 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>บันทึกบัญชีออนไลน์</title>
-<link rel="stylesheet" href="style.css?v=12.2">
+<link rel="stylesheet" href="style.css?v=13.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style id="auth-failsafe">
+html,body{min-height:100%;}
+.auth-screen{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#f8f4ff,#fff);}
+.auth-screen.hidden{display:none!important;}
+.app.auth-hidden{display:none!important;}
+.auth-logo{width:64px!important;height:64px!important;margin:0 auto 14px!important;border-radius:18px!important;display:grid!important;place-items:center!important;}
+.auth-logo svg{width:34px!important;height:34px!important;display:block!important;}
+.loading-screen{display:flex;}
+.loading-screen.hidden{display:none!important;}
+</style>
+
 </head>
 <body>
 <div id="authScreen" class="auth-screen">
