@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บันทึกบัญชี — เก้น & มิ้น</title>
+<title>บันทึกบัญชีออนไลน์</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="authScreen" class="auth-screen">
-    <div class="auth-card">
+    <div class="auth-card auth-card-wide">
         <div class="auth-logo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/>
@@ -17,15 +17,42 @@
             </svg>
         </div>
         <h2>บันทึกบัญชี</h2>
-        <p>เก้น & มิ้น</p>
-        <div id="authMemberHint" class="auth-member-hint">เข้าสู่ระบบเพื่อใช้งานบัญชีร่วม</div>
+        <p>บัญชีรายรับ–รายจ่ายออนไลน์</p>
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab active" id="loginTab">เข้าสู่ระบบ</button>
+            <button type="button" class="auth-tab" id="signupTab">สมัครใช้งาน</button>
+        </div>
         <form id="authForm">
-            <label>อีเมล</label>
+            <div id="signupFields" class="signup-fields hidden">
+                <label for="signupName">ชื่อที่ใช้ในบัญชี</label>
+                <input id="signupName" type="text" maxlength="40" placeholder="เช่น นัท">
+                <label>รูปโปรไฟล์</label>
+                <div class="avatar-picker" id="signupAvatarPicker">
+                    <button type="button" class="avatar-choice selected" data-avatar="🙂">🙂</button>
+                    <button type="button" class="avatar-choice" data-avatar="😀">😀</button>
+                    <button type="button" class="avatar-choice" data-avatar="😎">😎</button>
+                    <button type="button" class="avatar-choice" data-avatar="🧑🏻">🧑🏻</button>
+                    <button type="button" class="avatar-choice" data-avatar="👩🏻">👩🏻</button>
+                    <button type="button" class="avatar-choice" data-avatar="👨🏻">👨🏻</button>
+                </div>
+                <label>รูปแบบบัญชี</label>
+                <div class="mode-picker">
+                    <button type="button" class="mode-choice selected" data-mode="personal">👤<span>ใช้คนเดียว</span><small>มีแค่คุณ</small></button>
+                    <button type="button" class="mode-choice" data-mode="shared">👥<span>สร้างบัญชีร่วม</span><small>ชวนคนอื่นเข้ามา</small></button>
+                    <button type="button" class="mode-choice" data-mode="join">🔗<span>เข้าบัญชีร่วม</span><small>มีรหัสเชิญอยู่แล้ว</small></button>
+                </div>
+                <div id="inviteField" class="invite-field hidden">
+                    <label for="signupInvite">รหัสเชิญ</label>
+                    <input id="signupInvite" type="text" maxlength="20" placeholder="เช่น ABCD-1234">
+                </div>
+            </div>
+            <label for="authEmail">อีเมล</label>
             <input id="authEmail" type="email" autocomplete="email" required placeholder="อีเมลของคุณ">
-            <label>รหัสผ่าน</label>
+            <label for="authPassword">รหัสผ่าน</label>
             <input id="authPassword" type="password" autocomplete="current-password" required placeholder="รหัสผ่าน">
-            <button class="primary-btn auth-submit" type="submit">เข้าสู่ระบบ</button>
+            <button class="primary-btn auth-submit" type="submit" id="authSubmit">เข้าสู่ระบบ</button>
             <div id="authError" class="auth-error"></div>
+            <div id="authNote" class="auth-note">ใช้บัญชี Supabase เดิมได้เลย</div>
         </form>
     </div>
 </div>
@@ -44,11 +71,11 @@
         </div>
         <div>
             <h1>บันทึกบัญชี</h1>
-            <p>เก้น & มิ้น</p>
+            <p id="headerSubtitle">บัญชีร่วม</p>
         </div>
     </div>
     <div class="header-actions">
-        <div class="member-badge" id="currentMemberBadge">เก้น & มิ้น</div>
+        <div class="member-badge profile-badge" id="currentMemberBadge">ออนไลน์</div>
         <button class="logout-btn" id="logoutButton" type="button">ออกจากระบบ</button>
     </div>
 </header>
@@ -57,7 +84,7 @@
     <div class="top-row">
         <div>
             <div class="section-label">ภาพรวมการเงิน</div>
-            <h2 class="greeting">สวัสดี เก้น</h2>
+            <h2 class="greeting" id="homeGreeting">สวัสดี</h2>
         </div>
         <div class="member-badge date-button" id="homeMonth">เดือนนี้</div>
     </div>
@@ -66,7 +93,7 @@
         <div>
             <div class="balance-label">ยอดคงเหลือรวม</div>
             <div class="balance" id="balance">฿0.00</div>
-            <div class="balance-sub">เงินของเก้นและมิ้น</div>
+            <div class="balance-sub" id="balanceSub">เงินของบัญชี</div>
         </div>
         <button class="primary-btn" id="addButton" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -102,26 +129,21 @@
                     <path d="M3 20c0-3.2 2.7-5 6-5s6 1.8 6 5M15 15c3 0 5 1.5 5 4"/>
                 </svg>
             </div>
-            <div><div class="summary-title">สมาชิก</div><div class="summary-value">2 คน</div></div>
+            <div><div class="summary-title">สมาชิก</div><div class="summary-value" id="memberCount">1 คน</div></div>
         </div>
     </section>
 
     <section class="section">
-        <div class="section-title">เงินของเรา</div>
-        <h2 class="section-heading">เก้น & มิ้น</h2>
-        <div class="members">
-            <div class="member-card">
-                <div class="member-left"><div class="avatar">ก</div><div>
-                    <div class="member-name">เก้น</div><div class="member-money" id="kenMoney">฿0.00</div>
-                </div></div>
-                <div class="wallet-btn">฿</div>
+        <div class="section-title">กระเป๋าเงิน</div>
+        <h2 class="section-heading" id="walletTitle">กระเป๋าเงินของฉัน</h2>
+        <div class="shared-wallet-card">
+            <div class="wallet-avatar">฿</div>
+            <div class="wallet-info">
+                <div class="member-name">เงินที่ใช้ในบัญชีนี้</div>
+                <div class="wallet-total" id="walletTotal">฿0.00</div>
+                <small id="walletMembers">1 คนในบัญชี</small>
             </div>
-            <div class="member-card">
-                <div class="member-left"><div class="avatar">ม</div><div>
-                    <div class="member-name">มิ้น</div><div class="member-money" id="mintMoney">฿0.00</div>
-                </div></div>
-                <div class="wallet-btn">฿</div>
-            </div>
+            <div class="wallet-badge">รวมทั้งหมด</div>
         </div>
     </section>
 
@@ -140,7 +162,7 @@
     <div class="page-title">
         <div class="section-label">ประวัติการเงิน</div>
         <h2>รายการทั้งหมด</h2>
-        <p>ค้นหาและกรองรายรับรายจ่ายของเก้นและมิ้น</p>
+        <p>ค้นหาและกรองรายรับรายจ่ายของบัญชีนี้</p>
     </div>
 
     <div class="filter-box">
@@ -158,8 +180,6 @@
             </select>
             <select id="filterMember">
                 <option value="all">ผู้บันทึกทั้งหมด</option>
-                <option value="เก้น">เก้น</option>
-                <option value="มิ้น">มิ้น</option>
             </select>
             <select id="filterCategory">
                 <option value="all">หมวดหมู่ทั้งหมด</option>
@@ -247,11 +267,8 @@
     </section>
 
     <section class="report-section">
-        <div class="section-title">สรุปของแต่ละคน</div>
-        <div class="report-persons">
-            <div><span>เก้น</span><strong id="reportKen">฿0.00</strong></div>
-            <div><span>มิ้น</span><strong id="reportMint">฿0.00</strong></div>
-        </div>
+        <div class="section-title">สมาชิกในบัญชี</div>
+        <div class="report-persons" id="reportPersons"></div>
     </section>
 
     <section class="report-section six-month-section">
@@ -381,6 +398,44 @@
         </svg><span>รายงาน</span>
     </button>
 </nav>
+
+<div class="modal-overlay" id="onboardingOverlay">
+    <div class="modal onboarding-modal">
+        <div class="modal-header">
+            <div><div class="section-title">ตั้งค่าบัญชี</div><h2>เริ่มใช้งานกันเลย</h2></div>
+        </div>
+        <p class="onboarding-text">เลือกว่าจะใช้บัญชีคนเดียว หรือใช้กระเป๋าเงินร่วมกับคนอื่น</p>
+        <div class="form-group">
+            <label for="profileName">ชื่อของคุณ</label>
+            <input id="profileName" maxlength="40" placeholder="เช่น นัท">
+        </div>
+        <div class="form-group">
+            <label>รูปโปรไฟล์</label>
+            <div class="avatar-picker" id="onboardingAvatarPicker">
+                <button type="button" class="avatar-choice selected" data-avatar="🙂">🙂</button>
+                <button type="button" class="avatar-choice" data-avatar="😀">😀</button>
+                <button type="button" class="avatar-choice" data-avatar="😎">😎</button>
+                <button type="button" class="avatar-choice" data-avatar="🧑🏻">🧑🏻</button>
+                <button type="button" class="avatar-choice" data-avatar="👩🏻">👩🏻</button>
+                <button type="button" class="avatar-choice" data-avatar="👨🏻">👨🏻</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>รูปแบบบัญชี</label>
+            <div class="mode-picker">
+                <button type="button" class="mode-choice selected" data-mode="personal">👤<span>ใช้คนเดียว</span><small>กระเป๋าเงินของคุณ</small></button>
+                <button type="button" class="mode-choice" data-mode="shared">👥<span>สร้างบัญชีร่วม</span><small>สร้างรหัสเชิญ</small></button>
+                <button type="button" class="mode-choice" data-mode="join">🔗<span>เข้าบัญชีร่วม</span><small>ใช้รหัสเชิญ</small></button>
+            </div>
+        </div>
+        <div id="onboardingInviteField" class="form-group hidden">
+            <label for="onboardingInvite">รหัสเชิญ</label>
+            <input id="onboardingInvite" maxlength="20" placeholder="เช่น ABCD-1234">
+        </div>
+        <button class="save-btn" id="onboardingSubmit" type="button">เริ่มใช้งาน</button>
+        <div id="onboardingError" class="auth-error"></div>
+    </div>
+</div>
 
 <div class="modal-overlay" id="modalOverlay">
     <form class="modal" id="transactionForm">
